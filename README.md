@@ -11,12 +11,8 @@
 
 ---
 
-## 왜 이 프로젝트인가 — 채용 요건 매핑
+## 
 
-이 저장소는 ㈜인포유앤컴퍼니 AI 엔지니어 공고의 자격요건을 **동작하는 코드로 증빙**하기 위해 만들었다.
-
-| 공고 자격요건 | 구현 위치 | 비고 |
-|---|---|---|
 | Elasticsearch 등 벡터 DB 기반 RAG 구현 | `retrieval/es_store.py` | BM25 + dense kNN, RRF 융합 |
 | LangChain/LlamaIndex 기반 AI 에이전트 개발 | `harness/graph.py` | LangGraph 상태 기계 |
 | LLM 성능 최적화(토큰/속도/정확도) + 운영 | `serving/` + `eval/` | vLLM, 프롬프트 캐싱, 레이턴시 계측 |
@@ -132,9 +128,7 @@ python -m eval.run_regression \
 
 ---
 
-### 웹 챗봇 UI (선택)
-
-CLI 대신 웹에서 쓰려면 두 가지 방식이 있다 (`pip install -e ".[web]"` 선행):
+### CLI  
 
 **① FastAPI — 플로팅 위젯** (페이지 우측 하단 챗 버튼 → 클릭 시 채팅창)
 ```bash
@@ -147,10 +141,6 @@ uvicorn web.api:app --host 0.0.0.0 --port 8080
 streamlit run web/streamlit_app.py
 # → http://localhost:8501
 ```
-
-두 UI 모두 답변과 함께 **근거 문서**·**실행 경로(ROUTER→RETRIEVE→GENERATE→VERIFY)**를
-펼쳐 보여준다. 포트: vLLM=8000, FastAPI=8080, Streamlit=8501.
-
 
 ### 위키 코퍼스 파이프라인 (선택 — 검색 정확도 개선)
 

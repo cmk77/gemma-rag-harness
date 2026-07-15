@@ -128,7 +128,7 @@ python -m eval.run_regression \
 
 ---
 
-### CLI  
+### Web
 
 **① FastAPI — 플로팅 위젯** (페이지 우측 하단 챗 버튼 → 클릭 시 채팅창)
 ```bash

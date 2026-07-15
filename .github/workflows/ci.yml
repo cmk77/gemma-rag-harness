@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -e ".[dev]"
+          pip install ruff pytest
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Unit tests (파서·융합·지표 로직, 모델 불필요)
+        run: pytest tests/ -v
+
+  # ── 평가 회귀 게이트 ────────────────────────────────────
+  # 주의: 실제 회귀 평가는 Gemma 서빙 + ES가 필요하므로
+  # self-hosted 러너(로컬 RTX 등)에서만 동작. GitHub 호스티드 러너에서는
+  # dry-run으로 파이프라인 배선만 점검한다.
+  eval-regression:
+    runs-on: ubuntu-latest        # 실 평가는 [self-hosted, gpu]로 교체
+    needs: lint-and-test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install
+        run: pip install -e .
+
+      - name: Regression (dry-run on hosted; 실 GPU 러너에서 --baseline 사용)
+        run: |
+          python -m eval.run_regression \
+            --goldenset eval/goldenset.jsonl \
+            --dry-run
+        # self-hosted GPU 러너에서는 아래로 교체:
+        #   python -m eval.run_regression \
+        #     --goldenset eval/goldenset.jsonl \
+        #     --baseline eval/reports/baseline.json
+        # → 핵심 지표가 베이스라인 대비 하락하면 exit 1 로 PR 차단
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-report
+          path: eval/reports/latest.json

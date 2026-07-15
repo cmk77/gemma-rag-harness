@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ExampleCorp — 데모 페이지 (지식 챗봇 위젯)</title>
+<style>
+  :root {
+    --brand: #c8102e;          /* ExampleCorp 레드 계열 */
+    --brand-dark: #9d0c24;
+    --bg: #f6f7f9;
+    --panel-w: 380px;
+    --panel-h: 560px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Pretendard", "Malgun Gothic", sans-serif; background: var(--bg); color: #222; }
+
+  /* ── 데모용 본문(아무 웹페이지라고 가정) ─────────────── */
+  .hero { background: linear-gradient(135deg, #1c1f26, #2d3340); color: #fff; padding: 72px 24px; text-align: center; }
+  .hero h1 { font-size: 2rem; margin-bottom: 12px; }
+  .hero p { opacity: .85; }
+  .content { max-width: 860px; margin: 40px auto; padding: 0 24px; line-height: 1.8; }
+  .content h2 { margin: 28px 0 10px; font-size: 1.2rem; }
+  .badge { display:inline-block; background:var(--brand); color:#fff; border-radius:6px; padding:2px 10px; font-size:.8rem; margin-bottom:14px; }
+
+  /* ── 플로팅 챗 버튼 (우측 하단) ─────────────────────── */
+  #chat-fab {
+    position: fixed; right: 24px; bottom: 24px; z-index: 1000;
+    width: 60px; height: 60px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+    color: #fff; border: none; cursor: pointer; font-size: 26px;
+    box-shadow: 0 8px 24px rgba(200,16,46,.4);
+    transition: transform .15s ease;
+  }
+  #chat-fab:hover { transform: scale(1.08); }
+
+  /* ── 챗 패널 ────────────────────────────────────────── */
+  #chat-panel {
+    position: fixed; right: 24px; bottom: 96px; z-index: 1000;
+    width: var(--panel-w); height: var(--panel-h);
+    background: #fff; border-radius: 16px; overflow: hidden;
+    box-shadow: 0 16px 48px rgba(0,0,0,.22);
+    display: none; flex-direction: column;
+  }
+  #chat-panel.open { display: flex; }
+
+  .chat-head {
+    background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+    color: #fff; padding: 14px 16px; display: flex; align-items: center; gap: 10px;
+  }
+  .chat-head .title { font-weight: 700; }
+  .chat-head .sub { font-size: .72rem; opacity: .85; }
+  .chat-head .close { margin-left: auto; background: none; border: none; color: #fff; font-size: 18px; cursor: pointer; }
+
+  .chat-msgs { flex: 1; overflow-y: auto; padding: 14px; background: #f2f3f6; }
+  .msg { max-width: 84%; margin-bottom: 10px; padding: 10px 12px; border-radius: 12px;
+         font-size: .9rem; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+  .msg.user { margin-left: auto; background: var(--brand); color: #fff; border-bottom-right-radius: 4px; }
+  .msg.bot  { margin-right: auto; background: #fff; border: 1px solid #e4e6ea; border-bottom-left-radius: 4px; }
+  .msg.bot .meta { font-size: .72rem; color: #8a8f98; margin-top: 8px; }
+  .msg.bot details { margin-top: 8px; font-size: .78rem; }
+  .msg.bot details summary { cursor: pointer; color: var(--brand); font-weight: 600; }
+  .msg.bot details .body { margin-top: 6px; color: #555; }
+  .msg.bot details .path { font-family: ui-monospace, monospace; font-size: .72rem; background: #f6f7f9;
+                           border-radius: 8px; padding: 8px; white-space: pre-wrap; }
+  .msg.err { background: #fff3f3; border: 1px solid #f3c1c1; color: #a33; }
+
+  .typing { display: inline-flex; gap: 5px; padding: 4px 2px; }
+  .typing i { width: 7px; height: 7px; border-radius: 50%; background: #b9bec7; animation: blink 1.2s infinite; }
+  .typing i:nth-child(2) { animation-delay: .2s; }
+  .typing i:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%,80%,100% {opacity:.25} 40% {opacity:1} }
+
+  .chat-input { display: flex; gap: 8px; padding: 10px; background: #fff; border-top: 1px solid #eceef1; }
+  .chat-input input { flex: 1; border: 1px solid #d9dce2; border-radius: 10px; padding: 10px 12px; font-size: .9rem; outline: none; }
+  .chat-input input:focus { border-color: var(--brand); }
+  .chat-input button { background: var(--brand); color: #fff; border: none; border-radius: 10px;
+                       padding: 0 16px; font-size: .9rem; cursor: pointer; }
+  .chat-input button:disabled { opacity: .5; cursor: default; }
+
+  @media (max-width: 480px) {
+    #chat-panel { right: 12px; left: 12px; width: auto; height: 72vh; bottom: 92px; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- 데모 본문: 실제로는 회사 홈페이지 등 아무 페이지 -->
+  <div class="hero">
+    <h1>ExampleCorp — Example Service Company</h1>
+    <p>이 페이지는 챗봇 위젯 데모입니다. 우측 하단 버튼을 눌러 보세요.</p>
+  </div>
+  <div class="content">
+    <span class="badge">DEMO</span>
+    <h2>지식 챗봇 위젯</h2>
+    <p>우측 하단의 빨간 버튼이 챗봇 진입점입니다. 클릭하면 채팅창이 열리고,
+       색인된 ExampleCorp 문서를 근거로 답변합니다. 답변 아래에서 <b>근거 문서</b>와
+       <b>실행 경로(ROUTER → RETRIEVE → GENERATE → VERIFY)</b>를 펼쳐볼 수 있습니다.</p>
+    <h2>예시 질문</h2>
+    <p>· ExampleCorp은 어떤 회사인가요?<br>
+       · GATEWAY-A이 받은 인증은 무엇인가요?<br>
+       · PRODUCT-A로 Open API를 만들 때 코딩이 필요한가요?</p>
+  </div>
+
+  <!-- 플로팅 버튼 + 챗 패널 -->
+  <button id="chat-fab" title="챗봇 열기">💬</button>
+
+  <div id="chat-panel" role="dialog" aria-label="ExampleCorp 지식 챗봇">
+    <div class="chat-head">
+      <div>
+        <div class="title">ExampleCorp 지식 챗봇</div>
+        <div class="sub">Gemma 4 · 자기검증 RAG</div>
+      </div>
+      <button class="close" id="chat-close" title="닫기">✕</button>
+    </div>
+    <div class="chat-msgs" id="chat-msgs"></div>
+    <div class="chat-input">
+      <input id="chat-text" type="text" placeholder="ExampleCorp에 대해 물어보세요…" autocomplete="off">
+      <button id="chat-send">전송</button>
+    </div>
+  </div>
+
+<script>
+(function () {
+  const fab    = document.getElementById("chat-fab");
+  const panel  = document.getElementById("chat-panel");
+  const closeB = document.getElementById("chat-close");
+  const msgs   = document.getElementById("chat-msgs");
+  const input  = document.getElementById("chat-text");
+  const sendB  = document.getElementById("chat-send");
+  let greeted = false, pending = false;
+
+  const esc = s => s.replace(/[&<>"']/g, c => (
+    {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+  function scroll() { msgs.scrollTop = msgs.scrollHeight; }
+
+  function addUser(text) {
+    msgs.insertAdjacentHTML("beforeend", `<div class="msg user">${esc(text)}</div>`);
+    scroll();
+  }
+
+  function addTyping() {
+    msgs.insertAdjacentHTML("beforeend",
+      `<div class="msg bot" id="typing"><span class="typing"><i></i><i></i><i></i></span></div>`);
+    scroll();
+  }
+  function removeTyping() { document.getElementById("typing")?.remove(); }
+
+  function addBot(data) {
+    const meta = `${esc(data.stop_reason_kr || "")} · 재검색 ${data.retry_count ?? 0}회 · ${data.elapsed_sec ?? "?"}초`;
+    const srcs = (data.sources || []).map(s =>
+      `<div>[${s.index}] ${esc(s.preview)}…</div>`).join("");
+    const path = esc((data.path || []).join("\n"));
+    msgs.insertAdjacentHTML("beforeend", `
+      <div class="msg bot">
+        <div>${esc(data.answer || "(답변 없음)")}</div>
+        <div class="meta">${meta}</div>
+        ${srcs ? `<details><summary>근거 ${data.sources.length}개</summary><div class="body">${srcs}</div></details>` : ""}
+        ${path ? `<details><summary>실행 경로</summary><div class="path">${path}</div></details>` : ""}
+      </div>`);
+    scroll();
+  }
+
+  function addError(text) {
+    msgs.insertAdjacentHTML("beforeend", `<div class="msg bot err">${esc(text)}</div>`);
+    scroll();
+  }
+
+  function toggle(open) {
+    panel.classList.toggle("open", open);
+    if (open && !greeted) {
+      greeted = true;
+      msgs.insertAdjacentHTML("beforeend",
+        `<div class="msg bot">안녕하세요! ExampleCorp 문서 기반 지식 챗봇입니다.\n회사·제품(PRODUCT-A, SEARCH-B 등)에 대해 물어보세요.</div>`);
+    }
+    if (open) input.focus();
+  }
+
+  async function send() {
+    const q = input.value.trim();
+    if (!q || pending) return;
+    input.value = "";
+    addUser(q);
+    addTyping();
+    pending = true; sendB.disabled = true; input.disabled = true;
+    try {
+      const res  = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: q }),
+      });
+      const data = await res.json();
+      removeTyping();
+      if (!res.ok) addError(data.error || "요청 처리에 실패했습니다.");
+      else addBot(data);
+    } catch (e) {
+      removeTyping();
+      addError("서버에 연결할 수 없습니다. FastAPI(8080)가 떠 있는지 확인하세요.");
+    } finally {
+      pending = false; sendB.disabled = false; input.disabled = false; input.focus();
+    }
+  }
+
+  fab.addEventListener("click", () => toggle(!panel.classList.contains("open")));
+  closeB.addEventListener("click", () => toggle(false));
+  sendB.addEventListener("click", send);
+  input.addEventListener("keydown", e => { if (e.key === "Enter") send(); });
+})();
+</script>
+</body>
+</html>

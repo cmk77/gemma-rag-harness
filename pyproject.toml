@@ -1,0 +1,78 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gemma-rag-harness"
+version = "0.1.0"
+description = "Gemma 4 E4B + MTP 기반 자기검증형 RAG 에이전트 하네스 (LangGraph + Elasticsearch)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+
+dependencies = [
+    # 오케스트레이션
+    "langgraph>=0.2.0",
+    "langchain-core>=0.3.0",
+    "langchain-openai>=0.2.0",
+    # 검색
+    "elasticsearch>=8.11,<9",
+    # 임베딩 · 청킹
+    # sentence-transformers는 반드시 4.0 미만: 5.x는 bge-m3 로딩 시
+    # Pooling.__init__() missing 'embedding_dimension' 에러 발생 (실측).
+    # vllm(serving)이 transformers 5.x를 요구해 pip이 충돌 경고를 내지만,
+    # sentence-transformers 3.4.x + transformers 5.12.x 조합으로 bge-m3가
+    # 정상 동작함을 실측 확인했다. 경고는 무시해도 된다.
+    "sentence-transformers>=3.0,<4.0",
+    "tiktoken>=0.7",
+    # 문서 추출 (PDF/HTML → corpus)
+    "pymupdf4llm>=0.0.17",
+    "trafilatura>=1.8",
+    # 환경설정
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+# 서빙(GPU 머신에만 설치). vLLM은 CUDA 의존이 커서 분리.
+serving = [
+    "vllm>=0.6.0",
+]
+# 개발 · CI
+dev = [
+    "ruff>=0.6",
+    "pytest>=8.0",
+]
+# 웹 UI (FastAPI 위젯 백엔드 + Streamlit 챗 페이지)
+web = [
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "streamlit>=1.35",
+]
+
+[project.scripts]
+# 편의 진입점 (선택)
+rag-eval = "eval.run_regression:main"
+
+[tool.setuptools]
+packages = ["harness", "retrieval", "models", "eval", "scripts", "web"]
+
+# ── 린트 ────────────────────────────────────────────────
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]   # pycodestyle, pyflakes, isort, pyupgrade, bugbear
+ignore = [
+    "E501",   # 줄 길이는 formatter에 위임
+    "B008",   # 함수 기본인자 호출 (FastAPI 패턴 등에서 흔함)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/__init__.py" = ["F401"]           # 재노출(re-export) 허용
+
+# ── 테스트 ──────────────────────────────────────────────
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v"

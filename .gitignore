@@ -1,0 +1,61 @@
+# ─────────────────────────────────────────────────────────────
+# gemma-rag-harness .gitignore
+# 원칙: "코드·설정·문서·규약"은 커밋, "데이터·비밀·산출물·환경"은 제외
+# ─────────────────────────────────────────────────────────────
+
+# ── 1. 파이썬 실행 산출물 ────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+
+# ── 2. 가상환경 (의존성은 pyproject.toml로 관리) ─────────────
+.venv/
+venv/
+
+# ── 3. 비밀·로컬 설정 (절대 커밋 금지) ───────────────────────
+.env
+*.local
+secret.json
+*.pem
+*.key
+
+# ── 4. 회사 내부 문서와 그 파생물 (private 저장소여도 커밋 금지)
+# corpus/는 공개 샘플 1개만 예외 허용 — 저장소만 받아도 데모가 돌게.
+corpus/*
+!corpus/es_rag_guide.md
+raw/
+corpus_wiki/
+state/
+
+# ── 5. 실행 산출물·로그 ──────────────────────────────────────
+# 평가 리포트: 최신 실행분은 제외, baseline.json은 커밋(회귀 비교 기준)
+eval/reports/latest.json
+*.log
+nohup.out
+
+# ── 6. 모델 가중치·대용량 (HF 캐시는 ~/.cache라 원래 밖, 방어용)
+models/weights/
+*.pt
+*.pth
+*.safetensors
+*.onnx
+*.gguf
+data/
+datasets/
+
+# ── 7. 아카이브·설치파일 (프로젝트 폴더에 굴러다니는 것) ──────
+*.tar.gz
+*.deb
+
+# ── 8. 에디터·OS 잡파일 ──────────────────────────────────────
+.idea/
+.vscode/
+.DS_Store
+*Zone.Identifier
+
+# ── 9. 개인 작업 메모 (저장소에 안 올릴 개인 기록) ────────────
+sideprojectlog_*.txt

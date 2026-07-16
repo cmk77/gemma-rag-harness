@@ -47,8 +47,8 @@ SECTIONS = ["개요", "주요 기능", "취득 인증·수상", "지원 인증·
 
 WINDOW_CHARS = 3000        # A단계: 문서를 이 크기 창으로 잘라 LLM에 투입
 MAX_FACTS = 80             # 엔티티당 사실 상한(섹션 라운드로빈으로 선별)
-EXTRACT_MAX_TOKENS = 1024
-SYNTH_MAX_TOKENS = 1024
+EXTRACT_MAX_TOKENS = 2048   # 연혁·표 윈도우는 사실 수십 개 → 1024로는 JSON이 잘림(실측)
+SYNTH_MAX_TOKENS = 3072   # 60+ facts 페이지가 1024로 잘려 뒤쪽 섹션(취득 인증 등) 유실(실측) → 여유 확보
 
 EXTRACT_PROMPT = f"""너는 지식 추출기다. 주어진 문서 조각에서 '개체(entity)'와 '사실(fact)'을 추출하라.
 반드시 JSON 배열만 출력하라(설명·코드펜스 금지). 각 원소:
@@ -59,6 +59,12 @@ EXTRACT_PROMPT = f"""너는 지식 추출기다. 주어진 문서 조각에서 '
 - '취득 인증·수상'은 GS인증·수상 등 개체가 받은 자격, '지원 인증·규격'은 개체가
   기능으로 제공하는 인증 방식(OAuth2, JWT 등)·표준 규격이다. 절대 혼동하지 마라.
 - 개체명은 문서 표기 그대로(예: GATEWAY-A, ExampleCorp SEARCH-B).
+- 표·연혁이 OCR로 깨져 뒤섞인 조각이라도, '개체 + 인증/수상 + 등급/연도'가
+  식별되면 반드시 사실로 추출하라. 예: "ExampleCorp GATEWAY-A GS인증 1등급 취득"
+  → entity "GATEWAY-A", section "취득 인증·수상", fact "GS인증 1등급을 취득했다".
+- 인증·수상 사실의 entity는 인증 이름(예: "GS 인증")이 아니라 **그것을 받은
+  제품/회사명**이다. 조각 안에 제품명이 안 보이면 [문서명]에서 추정하라.
+- 연도·날짜(예: "2022년도")를 개체로 삼지 마라 — 사실 문장 안에 포함시켜라.
 - 사실이 없으면 빈 배열 []을 출력하라."""
 
 SYNTH_PROMPT = """너는 사내 지식위키 편집자다. 아래 [사실 목록]만 사용해 개체의 위키 페이지를
@@ -73,7 +79,9 @@ SYNTH_PROMPT = """너는 사내 지식위키 편집자다. 아래 [사실 목록
 ## 도입·활용
 ## 관계·연관
 
-각 항목은 "- 사실 (출처: 파일명)" 형태의 불릿으로 쓰고, 중복은 합쳐라."""
+각 항목은 "- 사실 (출처: 파일명)" 형태의 불릿으로 쓰고, 중복은 합쳐라.
+불릿은 간결한 한 문장으로 써라(장황한 부연 금지). 어떤 섹션도 빠뜨리지 마라 —
+해당 사실이 있는 섹션은 반드시 모두 출력하라."""
 
 
 # ── 유틸 ───────────────────────────────────────────────────────────
@@ -87,13 +95,22 @@ def _slug(name: str) -> str:
 
 
 def _parse_json_array(raw: str) -> list[dict]:
-    """LLM 출력에서 JSON 배열을 견고하게 파싱(코드펜스·잡문 방어)."""
+    """LLM 출력에서 JSON 배열을 견고하게 파싱.
+    코드펜스·잡문 방어 + max_tokens로 배열이 중간에 잘린 경우
+    마지막으로 완성된 객체까지 복구한다(사실 일부라도 건진다)."""
     raw = raw.strip()
     raw = re.sub(r"^```(json)?|```$", "", raw, flags=re.M).strip()
-    m = re.search(r"\[.*\]", raw, flags=re.S)
+    m = re.search(r"\[.*", raw, flags=re.S)      # 여는 대괄호부터 끝까지
     if not m:
         raise ValueError("JSON 배열 없음")
-    data = json.loads(m.group(0))
+    frag = m.group(0)
+    try:
+        data = json.loads(frag)
+    except json.JSONDecodeError:
+        cut = frag.rfind("}")                     # 마지막 완성 객체까지 절단
+        if cut == -1:
+            raise
+        data = json.loads(frag[:cut + 1] + "]")
     if not isinstance(data, list):
         raise ValueError("배열 아님")
     return data
@@ -149,7 +166,7 @@ def stage_extract(src: Path, state: Path, workers: int, limit: int | None,
         for i in range(0, len(text), WINDOW_CHARS):
             window = text[i:i + WINDOW_CHARS]
             try:
-                raw = ask(EXTRACT_PROMPT, window, role="expand",
+                raw = ask(EXTRACT_PROMPT, f"[문서명] {name}\n\n{window}", role="expand",
                           max_tokens=EXTRACT_MAX_TOKENS)
                 for item in _parse_json_array(raw):
                     ent = str(item.get("entity", "")).strip()
@@ -177,11 +194,17 @@ def stage_extract(src: Path, state: Path, workers: int, limit: int | None,
 
 
 # ── B단계: 엔티티 통합 (reduce — 정규화·중복제거·상한) ─────────────
+def _squash(s: str) -> str:
+    """구두점·공백을 제거한 비교키. 'PRODUCT-A - APIM' / 'GATEWAY-A' /
+    'API 관리 서버(API Management System: APIM)' 같은 표기 변형을 흡수한다."""
+    return re.sub(r"[\s\-:·().,\[\]/]+", "", s).lower()
+
+
 def _canonical(name: str, aliases: dict[str, str]) -> str:
     key = re.sub(r"\s+", " ", name).strip()
-    low = key.lower()
+    sk = _squash(key)
     for alias, canon in aliases.items():
-        if low == alias.lower():
+        if sk == _squash(alias):
             return canon
     return key
 
@@ -280,8 +303,10 @@ def main() -> None:
     ap.add_argument("--rebuild", action="store_true", help="체크포인트 무시 전체 재빌드")
     args = ap.parse_args()
 
-    aliases = {"gateway-a": "GATEWAY-A", "PRODUCT-A": "PRODUCT-A",
-               "ExampleCorp": "ExampleCorp", "examplecorp search-b": "ExampleCorp SEARCH-B",
+    aliases = {"gateway-a": "GATEWAY-A", "examplecorp gateway-a": "GATEWAY-A",
+               "gateway-a": "GATEWAY-A",
+               "PRODUCT-A": "PRODUCT-A", "ExampleCorp": "ExampleCorp",
+               "examplecorp search-b": "ExampleCorp SEARCH-B", "examplecorp search-b": "ExampleCorp SEARCH-B",
                "e-search": "ExampleCorp SEARCH-B"}
     if args.aliases:
         aliases.update(json.loads(Path(args.aliases).read_text(encoding="utf-8")))

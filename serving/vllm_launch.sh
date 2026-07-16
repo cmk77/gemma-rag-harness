@@ -19,7 +19,8 @@ set -euo pipefail
 MODEL="${MODEL:-google/gemma-4-E4B-it}"
 DRAFTER="${DRAFTER:-google/gemma-4-E4B-it-assistant}"   # MTP 초안 모델
 PORT="${PORT:-8000}"
-MAX_LEN="${MAX_LEN:-4096}"             # 컨텍스트 상한 (RAG는 4096이면 충분)
+MAX_LEN="${MAX_LEN:-8192}"             # 컨텍스트 상한. BASE_K=10 + 재검색(문서 15개)
+                                       # 기준으로 4096은 부족(실측 4097 초과 사고) → 8192
 GPU_UTIL="${GPU_UTIL:-0.40}"           # E4B는 작아서 0.40이면 넉넉
 NUM_SPEC="${NUM_SPEC:-4}"              # 초안이 미리 예측할 토큰 수
 TP="${TP:-1}"

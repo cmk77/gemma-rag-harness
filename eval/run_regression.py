@@ -105,8 +105,8 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
-    goldenset = [json.loads(l) for l in
-                 Path(args.goldenset).read_text(encoding="utf-8").splitlines() if l.strip()]
+    goldenset = [json.loads(line) for line in
+                 Path(args.goldenset).read_text(encoding="utf-8").splitlines() if line.strip()]
 
     print(f"[regression] 골든셋 {len(goldenset)}건 실행"
           f"{' (dry-run)' if args.dry_run else ''}...")

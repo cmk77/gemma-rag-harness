@@ -47,7 +47,7 @@ class Fact:
         return asdict(self)
 
     @staticmethod
-    def from_json(d: dict) -> "Fact":
+    def from_json(d: dict) -> Fact:
         return Fact(
             entity_raw=d["entity_raw"], section=d.get("section", "기타"),
             fact=d["fact"], source=d.get("source", "?"), doc_hash=d.get("doc_hash", ""),

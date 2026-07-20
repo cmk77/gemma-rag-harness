@@ -317,9 +317,9 @@ def main() -> None:
     grouped = stage_resolve(state, aliases, args.min_facts)
     stage_synthesize(grouped, out, state, args.workers, args.rebuild)
 
-    print(f"\n완료. 다음으로 별도 인덱스에 색인해 A/B 비교:")
+    print("\n완료. 다음으로 별도 인덱스에 색인해 A/B 비교:")
     print(f"  ES_INDEX=gemma_rag_wiki python -m scripts.index_corpus --dir {out}")
-    print(f"  ES_INDEX=gemma_rag_wiki python -m eval.run_regression --goldenset eval/goldenset.jsonl")
+    print("  ES_INDEX=gemma_rag_wiki python -m eval.run_regression --goldenset eval/goldenset.jsonl")
 
 
 if __name__ == "__main__":

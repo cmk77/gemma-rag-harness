@@ -21,6 +21,7 @@ from typing import Literal, TypedDict
 
 from langgraph.graph import END, StateGraph
 
+from harness.prompts import load_prompt
 from models.backends import ask as _ask
 
 # 하네스 실행 경로 로거. scripts/ask.py 등에서 레벨을 INFO로 켜면
@@ -61,11 +62,8 @@ class AgentState(TypedDict, total=False):
 
 
 # ─────────────────────────────────────────────────────────────
-# 프롬프트 (실제 프로젝트에서는 prompts/*.md로 분리·버전관리)
+# 프롬프트 — prompts/*.md 에서 로드 (코드 분리, 버전관리 용이)
 # ─────────────────────────────────────────────────────────────
-from harness.prompts import load_prompt
-
-# 시스템 프롬프트는 prompts/*.md 에서 로드 (코드 분리, 버전관리 용이)
 ROUTER_PROMPT = load_prompt("router")
 GENERATE_PROMPT = load_prompt("generate")
 VERIFY_PROMPT = load_prompt("verify")

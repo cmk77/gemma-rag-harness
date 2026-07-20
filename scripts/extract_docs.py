@@ -19,7 +19,6 @@ scripts/extract_docs.py
 from __future__ import annotations
 
 import argparse
-import sys
 from pathlib import Path
 
 RAW_PDF = Path("raw/pdf")

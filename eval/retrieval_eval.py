@@ -101,7 +101,11 @@ if __name__ == "__main__":
         {"qid": "a", "question": "q1", "gold_doc_ids": ["d1", "d2"]},
         {"qid": "b", "question": "q2", "gold_doc_ids": ["d3"]},
     ]
-    perfect = lambda q: ["d1", "d2", "d3"] if q == "q1" else ["d3", "d9"]
+    def perfect(q: str) -> list[str]:
+        return ["d1", "d2", "d3"] if q == "q1" else ["d3", "d9"]
+
+    def bad(q: str) -> list[str]:
+        return ["d7", "d8", "d9"]
+
     print("완벽 검색기:", evaluate_retrieval(perfect, gs, k=3)["aggregate"])
-    bad = lambda q: ["d7", "d8", "d9"]
     print("무관 검색기:", evaluate_retrieval(bad, gs, k=3)["aggregate"])

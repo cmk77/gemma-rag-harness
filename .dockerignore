@@ -1,0 +1,47 @@
+# ─────────────────────────────────────────────────────────────
+# .dockerignore — 공개 이미지에 들어가면 안 되는 것들.
+# 원칙은 .gitignore와 동일: 회사 내부 문서·비밀·로컬 산출물은 절대 포함 금지.
+# (GHCR 공식 이미지는 CI가 git 추적 파일만으로 빌드하지만,
+#  로컬 빌드에서도 같은 보장이 되도록 여기서 한 번 더 차단한다)
+# ─────────────────────────────────────────────────────────────
+
+# ── 비밀·로컬 설정 ──
+.env
+*.local
+secret.json
+*.pem
+*.key
+
+# ── 회사 내부 문서와 파생물 — 공개 샘플 1개만 예외 ──
+corpus/*
+!corpus/es_rag_guide.md
+raw/
+corpus_wiki/
+state/
+wiki_vault/
+sideprojectlog_*.txt
+eval/golden_50.jsonl
+eval/consistency_pairs.jsonl
+eval/reports/baseline_50_original.json
+eval/reports/baseline_50_hybrid.json
+
+# ── 이미지에 불필요한 것 ──
+.git
+.github
+docs/
+.venv
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info
+.pytest_cache/
+.ruff_cache/
+eval/reports/latest.json
+*.log
+nohup.out
+*Zone.Identifier
+.idea/
+.vscode/
+.DS_Store
+*.tar.gz
+*.deb

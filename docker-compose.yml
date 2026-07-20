@@ -1,0 +1,65 @@
+# ─────────────────────────────────────────────────────────────
+# gemma-rag-harness 데모 스택 — GPU 없이 CPU만으로 전체 파이프라인 실행
+#
+#   docker compose up -d   →   http://localhost:8080
+#
+# 첫 실행은 다운로드가 크다: 앱 이미지(GHCR) + bge-m3 임베딩(~2.3GB)
+# + Gemma(Ollama, ~3.3GB). 진행 상황은 `docker compose logs -f app`.
+# 모델 교체: OLLAMA_MODEL=gemma3:1b docker compose up -d  (작고 빠름)
+# ─────────────────────────────────────────────────────────────
+services:
+  # Elasticsearch 8.x + nori 형태소 분석기 (Dockerfile.es)
+  es:
+    image: ghcr.io/cmk77/gemma-rag-harness-es:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.es
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    ports:
+      - "9200:9200"            # 호스트에서 직접 색인·진단할 때 사용(데모 자체엔 불필요)
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    restart: unless-stopped
+
+  # 데모 LLM 서빙 (CPU). GPU 워크스테이션에선 이 서비스 대신 vLLM을 쓰면 된다.
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama-data:/root/.ollama
+    restart: unless-stopped
+    # NVIDIA GPU가 있으면 아래 주석을 해제 — 응답이 수십 배 빨라진다
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # 하네스 + 웹 UI. 기동 시 ES 대기 → 샘플 코퍼스 자동 색인 → 모델 pull → uvicorn
+  app:
+    image: ghcr.io/cmk77/gemma-rag-harness:latest
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      ES_URL: http://es:9200
+      ES_INDEX: gemma_rag
+      # 데모 LLM: Ollama(OpenAI 호환 /v1). vLLM에 붙이려면 HEAVY_URL/HEAVY_MODEL만 교체.
+      HEAVY_URL: http://ollama:11434/v1
+      HEAVY_MODEL: ${OLLAMA_MODEL:-gemma3:4b}
+      OLLAMA_URL: http://ollama:11434   # entrypoint의 모델 자동 pull용(비우면 pull 안 함)
+    volumes:
+      - hf-cache:/root/.cache/huggingface   # bge-m3 캐시 — 재기동 시 재다운로드 방지
+    depends_on:
+      - es
+      - ollama
+    restart: unless-stopped
+
+volumes:
+  es-data:
+  ollama-data:
+  hf-cache:

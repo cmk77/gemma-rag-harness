@@ -8,12 +8,14 @@ LangGraph로 검색·생성·검증을 상태 기계로 묶고, 검증 실패 �
 ```bash
 git clone https://github.com/cmk77/gemma-rag-harness.git
 cd gemma-rag-harness
+docker compose pull   # GHCR의 사전 빌드 이미지 다운로드 (생략하면 클론된 소스로 직접 빌드)
 docker compose up -d
 ```
 
 브라우저에서 **http://localhost:8080** 접속 → 우측 하단 챗 버튼.
 
-- 이미지는 GHCR에서 자동으로 받는다: `ghcr.io/cmk77/gemma-rag-harness`
+- 사전 빌드 이미지: `ghcr.io/cmk77/gemma-rag-harness` — GitHub Actions가 main 푸시마다 발행.
+  `pull`을 생략해도 compose가 같은 Dockerfile로 로컬 빌드하므로 동작은 동일하다(수 분 소요).
 - 첫 실행은 다운로드로 시간이 걸린다(bge-m3 임베딩 ~2.3GB + Gemma 모델 ~3.3GB).
   진행 상황은 `docker compose logs -f app` 으로 확인.
 - CPU 추론이라 답변에 수십 초 걸릴 수 있다. NVIDIA GPU가 있으면

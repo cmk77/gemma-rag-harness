@@ -23,8 +23,8 @@ Claude Code로 작업을 이어받을 때 이 스냅숏을 사실로 전제하�
 - **환경**: 워크스테이션 = WSL2 + venv + RTX 6000 Ada 48GB. 집 노트북 = WSL2 + conda,
   NVIDIA 없음 → Ollama(CPU) 경로 B (SETUP_HOME.md). `.env` 두 줄로 서빙 전환 가능.
 
-### 해결된 핵심 이슈 — GATEWAY-A "인증" 중의성 (오독 금지)
-- "받은/취득한 인증"(certification → **GS인증 1등급**)과 "지원하는 인증"
+### 해결된 핵심 이슈 — 한국어 "인증" 중의성 (오독 금지)
+- "받은/취득한 인증"(certification → **품질인증 등급**)과 "지원하는 인증"
   (authentication → Basic·API Key·JWT·OAuth2)은 **다른 질문, 다른 정답**이다.
 - 과거 오답 원인: 벡터 성분이 "인증" 중의성으로 authentication 문서를 top-5에
   올림 + VERIFY가 질문을 안 봐서 표현에 따라 판정이 갈림.
@@ -34,10 +34,11 @@ Claude Code로 작업을 이어받을 때 이 스냅숏을 사실로 전제하�
 - ES 검색 필드는 `content`가 아니라 **`text`**다 (진단 시 헷갈리지 말 것).
 
 ### 평가 체계
-- ExampleCorp 골든셋 15문항(eval/goldenset.jsonl). 베이스라인: faithfulness 4.733 /
-  correctness 4.533 / relevance 4.867. 개선 후 재평가로 correctness 상승 확인이 남은 일.
-- 확장 산출물(50문항 golden_50.jsonl, 일관성 페어, ADR-0001)이 별도 생성돼
-  있으며 eval/·docs/adr/ 반영 여부는 작업 전 디렉토리를 확인하라.
+- 공개 샘플 골든셋 5문항(eval/goldenset_sample.jsonl) — corpus/es_rag_guide.md 만으로
+  답할 수 있는 문항이며 `gold_doc_ids`에 실제 청크 ID가 채워져 있어 검색 지표가 집계된다.
+- 일관성 페어 3쌍(eval/consistency_pairs_sample.jsonl): invariant 2 + discriminative 1.
+- 실 코퍼스 골든셋·베이스라인 리포트는 공개 저장소에 두지 않는다. 사내 평가는 로컬에서
+  `--goldenset`·`--baseline` 경로를 직접 지정해 돌린다.
 
 ### 웹 프론트엔드 (web/)
 - FastAPI(`uvicorn web.api:app --port 8080`) — 우측 하단 플로팅 챗 위젯 + 근거·실행경로 표시.
@@ -47,7 +48,7 @@ Claude Code로 작업을 이어받을 때 이 스냅숏을 사실로 전제하�
 ### 진행 중 로드맵
 1. **위키 코퍼스 ①**: `python -m scripts.build_wiki --workers 4` →
    `ES_INDEX=gemma_rag_wiki python -m scripts.index_corpus --dir corpus_wiki` →
-   같은 골든셋으로 A/B (기존 correctness 4.533 대비). ← **다음 실행 대기**
+   같은 골든셋으로 A/B. ← **다음 실행 대기**
 2. ① 효과 확인 후 **② 소규모 지식그래프**(트리플 수십 개, build_wiki 골격 재사용).
 3. 수천~수백만 문서 전제 유지: 증분(sha1)·체크포인트·병렬(--workers)·오류 격리 설계를 깨지 마라.
 
@@ -104,7 +105,7 @@ Claude Code로 작업을 이어받을 때 이 스냅숏을 사실로 전제하�
 ruff check . && pytest tests/
 
 # 평가 배선 점검 (모델 불필요)
-python -m eval.run_regression --goldenset eval/goldenset.jsonl --dry-run
+python -m eval.run_regression --goldenset eval/goldenset_sample.jsonl --dry-run
 
 # 서빙 기동 (GPU 필요)
 bash serving/vllm_launch.sh

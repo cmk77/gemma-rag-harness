@@ -47,11 +47,11 @@ jobs:
       - name: Regression (dry-run on hosted; 실 GPU 러너에서 --baseline 사용)
         run: |
           python -m eval.run_regression \
-            --goldenset eval/goldenset.jsonl \
+            --goldenset eval/goldenset_sample.jsonl \
             --dry-run
         # self-hosted GPU 러너에서는 아래로 교체:
         #   python -m eval.run_regression \
-        #     --goldenset eval/goldenset.jsonl \
+        #     --goldenset eval/goldenset_sample.jsonl \
         #     --baseline eval/reports/baseline.json
         # → 핵심 지표가 베이스라인 대비 하락하면 exit 1 로 PR 차단
 

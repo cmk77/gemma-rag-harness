@@ -39,7 +39,7 @@ python -m scripts.ask              # CLI 질의  (웹 UI: uvicorn web.api:app --
 
 ```bash
 ruff check . && pytest tests/                                    # 모델·ES 불필요
-python -m eval.run_regression --goldenset eval/goldenset.jsonl   # 골든셋 평가 (서빙+ES 필요)
+python -m eval.run_regression --goldenset eval/goldenset_sample.jsonl   # 골든셋 평가 (서빙+ES 필요)
 ```
 
 ---

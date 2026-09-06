@@ -1,7 +1,7 @@
 # SETUP.md — WSL에서 처음부터 실행하기
 
 Windows 11 + WSL2(Ubuntu) + Python venv 환경 기준 단계별 가이드.
-프로젝트 위치: `/home/mozi/gemma-rag-harness` (= `\\wsl.localhost\Ubuntu\home\mozi\gemma-rag-harness`)
+프로젝트 위치: `~/gemma-rag-harness` (= `\\wsl.localhost\Ubuntu\home\<사용자명>\gemma-rag-harness`)
 
 **하드웨어 기준**: RTX 6000 Ada 48GB · 128GB RAM · i9-14900K
 → Gemma 4 E4B + MTP(추측 디코딩)를 vLLM으로 서빙한다. E4B는 가벼워 VRAM 여유가 크고,
@@ -291,10 +291,10 @@ cd ~/gemma-rag-harness
 source .venv/bin/activate
 
 # 배선만 점검 (모델 불필요)
-python -m eval.run_regression --goldenset eval/goldenset.jsonl --dry-run
+python -m eval.run_regression --goldenset eval/goldenset_sample.jsonl --dry-run
 
 # 실제 평가 (vLLM + ES 필요) — 검색·생성 품질 측정
-python -m eval.run_regression --goldenset eval/goldenset.jsonl
+python -m eval.run_regression --goldenset eval/goldenset_sample.jsonl
 
 # 이번 결과를 베이스라인으로 저장 → 이후 회귀 감지에 사용
 mkdir -p eval/reports
@@ -305,7 +305,7 @@ cp eval/reports/latest.json eval/reports/baseline.json
 
 ```bash
 python -m eval.run_regression \
-  --goldenset eval/goldenset.jsonl \
+  --goldenset eval/goldenset_sample.jsonl \
   --baseline eval/reports/baseline.json
 # 핵심 지표 하락 시 exit 1
 ```

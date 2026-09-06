@@ -36,7 +36,7 @@ STOP_KR = {
     "no_new_docs": "새 근거 없어 중단",
 }
 
-st.set_page_config(page_title="ExampleCorp 지식 챗봇", page_icon="💬", layout="centered")
+st.set_page_config(page_title="지식 챗봇", page_icon="💬", layout="centered")
 
 
 @st.cache_resource(show_spinner="하네스 초기화 중… (그래프 + 임베딩 모델 로딩)")
@@ -52,7 +52,7 @@ def load_graph():
     return graph
 
 
-st.title("💬 ExampleCorp 지식 챗봇")
+st.title("💬 지식 챗봇")
 st.caption("Gemma 4 E4B + MTP · 자기검증 RAG (LangGraph + Elasticsearch 하이브리드 검색)")
 
 with st.sidebar:
@@ -64,9 +64,9 @@ with st.sidebar:
     )
     st.markdown("### 예시 질문")
     st.markdown(
-        "- ExampleCorp은 어떤 회사인가요?\n"
-        "- GATEWAY-A이 받은 인증은?\n"
-        "- PRODUCT-A로 API 만들 때 코딩이 필요한가요?"
+        "- Elasticsearch 하이브리드 검색은 어떻게 융합하나요?\n"
+        "- RRF의 rank_constant는 어떤 역할을 하나요?\n"
+        "- nori 형태소 분석기는 검색 품질에 어떤 도움이 되나요?"
     )
     if st.button("대화 초기화", use_container_width=True):
         st.session_state.messages = []
@@ -98,7 +98,7 @@ for m in st.session_state.messages:
             st.markdown(m["content"])
 
 # 입력 처리
-if q := st.chat_input("ExampleCorp에 대해 물어보세요…"):
+if q := st.chat_input("색인된 문서에 대해 물어보세요…"):
     st.session_state.messages.append({"role": "user", "content": q})
     with st.chat_message("user"):
         st.markdown(q)

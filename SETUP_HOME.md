@@ -182,27 +182,21 @@ curl http://localhost:9200          # cluster_name 나오면 OK
 
 ---
 
-## 8단계: 코퍼스 데이터 이전 (중요!)
+## 8단계: 코퍼스 준비
 
-**실제 ExampleCorp 문서(corpus/*.md, raw/)는 회사 PC에만 있다.** 압축 파일의 corpus/에는
-샘플 1개만 들어 있으므로, ExampleCorp 질의를 하려면 회사에서 데이터를 가져와야 한다.
+저장소의 `corpus/`에는 공개 샘플 문서 1개(`es_rag_guide.md`)만 들어 있다.
+이 샘플만으로도 색인·질의·평가가 모두 동작한다.
 
-회사 WSL에서:
+다른 문서를 추가하려면 `corpus/`에 `.md`/`.txt`를 넣거나, 원본 PDF/HTML을
+`raw/pdf`·`raw/html`에 두고 추출한다:
+
 ```bash
-cd ~/gemma-rag-harness
-tar -czf /mnt/c/Users/<사용자명>/Desktop/corpus_data.tar.gz corpus/ raw/
-# → USB나 클라우드로 집에 전달
+mkdir -p raw/pdf raw/html
+python -m scripts.extract_docs      # raw/ → corpus/*.md
+ls corpus/ | wc -l
 ```
 
-집 WSL에서:
-```bash
-cd ~/gemma-rag-harness
-tar -xzf /mnt/c/Users/<사용자명>/Downloads/corpus_data.tar.gz
-ls corpus/ | wc -l    # 33개 안팎 나와야 (ExampleCorp 문서들)
-```
-
-> raw/(원본 PDF·HTML)까지 가져오면 나중에 재추출도 가능하다.
-> corpus/만 있어도 색인·질의는 된다.
+> `corpus/`는 `.gitignore` 대상이다(샘플 1개만 예외). 어떤 문서를 넣어도 커밋되지 않는다.
 
 ---
 
@@ -305,14 +299,14 @@ conda activate gemma-rag
 cd ~/gemma-rag-harness
 
 python -m scripts.ask          # 대화형 모드 (권장 — 두 번째 질문부터 빠름)
-# 질문> ExampleCorp은 어떤 회사인가요?
+# 질문> Elasticsearch 하이브리드 검색은 어떻게 융합하나요?
 ```
 
 실행 경로(`ROUTER → RETRIEVE → GENERATE → VERIFY`)와 근거 기반 답변이 나오면 완성.
 
-평가(골든셋 15문항 채점):
+평가(샘플 골든셋 5문항 채점):
 ```bash
-python -m eval.run_regression --goldenset eval/goldenset.jsonl
+python -m eval.run_regression --goldenset eval/goldenset_sample.jsonl
 ```
 
 ---

@@ -54,7 +54,7 @@ web = [
 rag-eval = "eval.run_regression:main"
 
 [tool.setuptools]
-packages = ["harness", "retrieval", "models", "eval", "scripts", "web"]
+packages = ["harness", "retrieval", "models", "eval", "scripts", "web", "wiki", "wiki_vault"]
 
 # ── 린트 ────────────────────────────────────────────────
 [tool.ruff]

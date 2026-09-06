@@ -3,7 +3,7 @@ eval/run_consistency.py
 
 일관성 검증 러너.
 
-consistency_pairs.jsonl의 각 페어를 하네스로 실행하고, LLM-as-Judge로
+consistency_pairs_sample.jsonl의 각 페어를 하네스로 실행하고, LLM-as-Judge로
 두 답변을 판정한다.
 
 - invariant 페어: 두 답변이 같은 정답으로 수렴하면 PASS (표현 변주 강건성)
@@ -15,7 +15,7 @@ consistency_pairs.jsonl의 각 페어를 하네스로 실행하고, LLM-as-Judge
 사용법:
     python -m eval.run_consistency                    # 기본 3회 반복
     python -m eval.run_consistency --repeat 5         # 5회 반복
-    python -m eval.run_consistency --pairs eval/consistency_pairs.jsonl
+    python -m eval.run_consistency --pairs eval/consistency_pairs_sample.jsonl
 """
 
 import argparse
@@ -70,7 +70,7 @@ def judge(pair: dict, ans_a: str, ans_b: str, judge_fn) -> dict:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--pairs", default="eval/consistency_pairs.jsonl")
+    ap.add_argument("--pairs", default="eval/consistency_pairs_sample.jsonl")
     ap.add_argument("--repeat", type=int, default=3,
                     help="각 질문을 몇 번 반복 실행해 안정성을 볼지")
     ap.add_argument("--out", default="eval/reports/consistency_latest.json")
@@ -78,7 +78,7 @@ def main() -> int:
 
     if run_query is None:
         print("ERROR: harness.graph.run_query 를 import 하지 못했습니다.")
-        print("       워크스테이션(/home/mozi/gemma-rag-harness)에서 실행하고,")
+        print("       프로젝트 루트에서 실행하고,")
         print("       import 경로를 프로젝트에 맞게 수정하세요.")
         return 1
 

@@ -20,10 +20,6 @@ corpus_wiki/
 state/
 wiki_vault/
 sideprojectlog_*.txt
-eval/golden_50.jsonl
-eval/consistency_pairs.jsonl
-eval/reports/baseline_50_original.json
-eval/reports/baseline_50_hybrid.json
 
 # ── 이미지에 불필요한 것 ──
 .git

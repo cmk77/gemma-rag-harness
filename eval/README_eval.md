@@ -1,65 +1,80 @@
 # 평가 산출물 사용 안내
 
-이 디렉토리의 파일들을 워크스테이션(`/home/mozi/gemma-rag-harness`)의
-`eval/`, `docs/adr/`에 복사해 사용하세요.
+`eval/`의 평가 자산과 실행법을 정리한다. 모든 명령은 **프로젝트 루트**에서 실행한다.
 
 ## 파일 목록
 
 | 파일 | 용도 |
 |---|---|
-| `golden_50.jsonl` | 50문항 확장 골든셋(기존 15문항 형식 계승) |
-| `consistency_pairs.jsonl` | 일관성 검증 페어 10쌍(중의성 구분 5 + 표현 불변 5) |
+| `goldenset_sample.jsonl` | 공개 샘플 골든셋 5문항. `corpus/es_rag_guide.md` 만으로 답할 수 있고 `gold_doc_ids`에 실제 청크 ID가 채워져 있다 |
+| `consistency_pairs_sample.jsonl` | 일관성 검증 페어 3쌍(invariant 2 + discriminative 1) |
+| `run_regression.py` | 골든셋 평가 + 회귀 게이트 러너 |
 | `run_consistency.py` | 일관성 검증 러너 |
-| `../docs/adr/ADR-0001-*.md` | BASE_K↑ + VERIFY 강화 결정 기록 |
+| `retrieval_eval.py` | 검색 단독 지표(Recall@k · MRR · nDCG@k · Hit@k) |
+| `judge.py` | LLM-as-Judge 채점 |
+| `../docs/adr/0004-retrieval-k-and-verify-hardening.md` | BASE_K↑ + VERIFY 강화 결정 기록 |
 
-## 1. 골든셋 재평가 (50문항)
+> 실 코퍼스 골든셋과 베이스라인 리포트는 공개 저장소에 두지 않는다.
+> 사내 평가는 `--goldenset`·`--baseline`에 로컬 경로를 직접 지정해 돌린다.
 
-기존 평가 스크립트에 골든셋 경로만 바꿔 넣으면 됩니다.
+## 1. 골든셋 평가
 
 ```bash
 # 서빙·ES 기동 (표준 순서)
-bash serving/vllm_launch.sh           # 터미널1: E4B+MTP, 포트 8000
-docker start es                        # 터미널2
+bash serving/vllm_launch.sh            # 터미널1: E4B+MTP, 포트 8000
+docker compose up -d es                # 터미널2: Elasticsearch + nori
 
-# 재평가 — 기존 평가 진입점에 50문항 골든셋 지정
-python -m eval.run --golden eval/golden_50.jsonl --out eval/reports/latest_50.json
+# 배선만 점검 — 모델·ES 불필요
+python -m eval.run_regression --goldenset eval/goldenset_sample.jsonl --dry-run
 
-# baseline과 비교 (baseline.json이 있으면 자동 비교)
-# correctness가 4.533(15문항 baseline) 대비 올랐는지 확인
+# 실제 평가
+python -m eval.run_regression \
+    --goldenset eval/goldenset_sample.jsonl \
+    --out eval/reports/latest.json
 ```
 
-> 15문항 baseline과 50문항은 문항 수가 다르므로, 엄밀히는 50문항으로 새
-> baseline을 한 번 찍고(개선 전 코드로) 그 다음 개선 후를 비교하는 것이
-> 가장 정확합니다. 이미 개선이 적용된 상태라면, 지금 50문항 결과를 새
-> baseline(`baseline_50.json`)으로 저장해두고 이후 변경과 비교하세요.
+이번 결과를 베이스라인으로 굳히려면:
 
 ```bash
-cp eval/reports/latest_50.json eval/reports/baseline_50.json
+cp eval/reports/latest.json eval/reports/baseline.json
 ```
+
+이후 변경분은 베이스라인과 비교해 회귀를 감지한다(핵심 지표 하락 시 exit 1):
+
+```bash
+python -m eval.run_regression \
+    --goldenset eval/goldenset_sample.jsonl \
+    --baseline eval/reports/baseline.json
+```
+
+회귀 임계치는 `run_regression.py`의 `REGRESSION_THRESHOLDS`에 있다 —
+`Recall@5` −0.05, `MRR` −0.05, `faithfulness` −0.3, `correctness` −0.3.
+
+> 골든셋을 새로 만들 때는 `gold_doc_ids`를 반드시 채운다. 비어 있으면
+> `retrieval_eval.load_goldenset`이 해당 문항을 검색 평가에서 제외해
+> Recall@5·MRR·nDCG가 항상 0으로 집계된다.
+> 청크 ID는 `retrieval/indexer.py`의 `chunk()`가 만드는
+> `sha1("{파일명}:{시작토큰}:{청크본문}")[:16]` 이다.
 
 ## 2. 일관성 검증
 
 ```bash
-# run_consistency.py 상단의 import 두 줄을 프로젝트에 맞게 확인:
-#   from harness.graph import run_query        # query -> {answer, route, retry_count, ...}
-#   from eval.judge import call_judge_model    # prompt -> str(JSON)
-
 python -m eval.run_consistency --repeat 3
+python -m eval.run_consistency --pairs eval/consistency_pairs_sample.jsonl --repeat 5
 ```
 
 판정 기준:
-- **invariant 페어**(c002, c003, c005, c007, c009): 두 답이 같은 정답으로
-  수렴 → PASS. 개선 전 불안정성이 나던 지점.
-- **discriminative 페어**(c001, c004, c006, c008, c010): 두 답이 서로 다른
-  올바른 답 → PASS. 중의성을 구분하는지.
-- **route 안정성**: 같은 질문 N회 반복 시 실행 경로가 일관되는지.
 
-기대 결과(개선이 제대로 적용됐다면):
-- c001: a=certification(GS인증), b=authentication(인증방식) → 서로 달라 PASS
-- c002: 둘 다 GS인증으로 수렴 → PASS (개선 전엔 여기서 갈렸음)
+- **invariant 페어**(c001, c002): 표현이 달라도 두 답이 같은 정답으로 수렴 → PASS
+- **discriminative 페어**(c003): 중의적인 두 질문이 서로 다른 올바른 답 → PASS
+- **route 안정성**: 같은 질문을 N회 반복했을 때 실행 경로가 일관되는지
+
+기대 결과:
+
+- c001 / c002: 두 답이 각각 같은 값(60 / nori)으로 수렴 → PASS
+- c003: a는 RRF 융합 방식, b는 dense_vector 유사도 메트릭으로 갈려야 PASS
 
 ## 3. ADR
 
-`docs/adr/ADR-0001-retrieval-k-and-verify-hardening.md`는 위 두 평가 결과를
-첨부하는 자리(§6 후속 체크리스트)를 비워뒀습니다. 재평가·일관성 결과 수치를
-채워 넣으면 "측정 → 결정 → 검증" 사이클이 완결된 포트폴리오 증빙이 됩니다.
+`docs/adr/0004-retrieval-k-and-verify-hardening.md`의 §6 후속 체크리스트는 비어 있다.
+위 두 평가 결과 수치를 채워 넣으면 "측정 → 결정 → 검증" 사이클이 완결된다.

@@ -1,6 +1,6 @@
 """CLI — 강연 실습 흐름과 1:1 대응하는 커맨드.
 
-  python -m wiki_vault.cli onboard --name "Mozi" --org "ExampleCorp" \\
+  python -m wiki_vault.cli onboard --name "사용자명" --org "조직명" \\
       --interests "RAG, LangGraph" [--main-vault /path/to/main]
   python -m wiki_vault.cli inbox                 # 인박스 분류 미리보기
   python -m wiki_vault.cli ingest [--abstract-only] [--commentary "..."]

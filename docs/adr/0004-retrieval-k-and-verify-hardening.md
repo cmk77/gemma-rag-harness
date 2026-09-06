@@ -1,4 +1,4 @@
-# ADR-0001: 검색 폭(BASE_K) 상향 및 VERIFY 프롬프트 강화
+# ADR-0004: 검색 폭(BASE_K) 상향 및 VERIFY 프롬프트 강화
 
 - **상태**: 채택됨 (Accepted)
 - **일자**: 2026-07-03
@@ -9,14 +9,14 @@
 
 ## 1. 배경 (Context)
 
-`gemma-rag-harness`는 ExampleCorp 사내 문서를 대상으로 하는 자가검증 RAG 에이전트다.
+`gemma-rag-harness`는 기술문서 코퍼스를 대상으로 하는 자가검증 RAG 에이전트다.
 LangGraph 6노드 파이프라인(ROUTER → RETRIEVE → GENERATE → VERIFY + 재검색 루프)에
 Elasticsearch 하이브리드 검색(BM25 + bge-m3 kNN, RRF 융합)을 결합했다.
 
 운영 중 다음 실패 케이스가 발견됐다.
 
-> **질문**: "GATEWAY-A이 받은 인증은 무엇인가요?"
-> **정답**: GS인증 1등급 (공인 인증, certification)
+> **질문**: "API 게이트웨이 제품이 받은 인증은 무엇인가요?"
+> **정답**: 품질인증 1등급 (공인 인증, certification)
 > **하네스 답변**: "Basic·API Key·JWT·OAuth2 인증" (제품이 지원하는 사용자 인증, authentication)
 
 즉 한국어 "인증"의 중의성(**certification** 공인 인증 ↔ **authentication** 사용자 인증)
@@ -24,10 +24,10 @@ Elasticsearch 하이브리드 검색(BM25 + bge-m3 kNN, RRF 융합)을 결합했
 
 ### 진단으로 확정된 원인 사슬
 
-1. **정답 문서는 색인에 정상 존재한다.** ES `text` 필드로 "GS인증"을 검색하면
+1. **정답 문서는 색인에 정상 존재한다.** ES `text` 필드로 "품질인증"을 검색하면
    25건이 매칭되고 최상위 점수는 7.4다. (초기에 `content` 필드로 검색해 0건이
    나온 것은 필드명 오류였고, 진단 자체가 무효였다.)
-2. **BM25 단독은 정답을 1위로 찾는다.** 순수 키워드 검색에서 GS인증(certification)
+2. **BM25 단독은 정답을 1위로 찾는다.** 순수 키워드 검색에서 품질인증(certification)
    문서가 최상위로 나온다.
 3. **하이브리드 검색의 벡터 성분이 오답을 유발한다.** bge-m3가 "인증"을
    authentication 의미 쪽으로 임베딩해, authentication 문서와의 벡터 유사도가
@@ -101,7 +101,7 @@ alignment)"** 판정을 추가한다. 불일치 시 `insufficient`로 판정해 
 ### 긍정적
 
 - 미묘하게 다른 두 질문에 각각 정확한 답이 나온다.
-  - "받은 인증" → GS인증 1등급 (certification)
+  - "받은 인증" → 품질인증 1등급 (certification)
   - "지원하는 인증" → Basic·API Key·JWT·OAuth2 (authentication)
 - 두 답 모두 **재검색 0회로 검증 통과**한다. 이는 불안정성이 아니라, 첫
   검색부터 올바른 근거를 확보해 재검색이 불필요해진 상태다.
@@ -116,9 +116,9 @@ alignment)"** 판정을 추가한다. 불일치 시 `insufficient`로 판정해 
 
 ### 검증 방법 (측정으로 확인)
 
-1. **골든셋 재평가** (`eval/golden_50.jsonl`, 50문항):
-   baseline(correctness 4.533) 대비 correctness 상승 확인.
-2. **일관성 검증** (`eval/consistency_pairs.jsonl` + `run_consistency.py`):
+1. **골든셋 재평가** (`--goldenset`으로 지정한 골든셋):
+   직전 baseline 리포트 대비 correctness 상승 확인.
+2. **일관성 검증** (`eval/consistency_pairs_sample.jsonl` + `run_consistency.py`):
    - discriminative 페어(중의성 구분)가 서로 다른 정답을 내는지
    - invariant 페어(표현 변주)가 같은 정답으로 수렴하는지
    - 같은 질문 N회 반복 시 route 안정성
@@ -132,7 +132,7 @@ alignment)"** 판정을 추가한다. 불일치 시 `insufficient`로 판정해 
 
 ## 6. 후속 (Follow-ups)
 
-- [ ] `eval/golden_50.jsonl`로 재평가 후 baseline 대비 점수 표 첨부
+- [ ] 골든셋 재평가 후 baseline 대비 점수 표 첨부
 - [ ] `run_consistency.py` 결과(pass rate, route 안정성) 첨부
 - [ ] top-5 vs top-10 레이턴시/토큰 벤치 리포트
 - [ ] (조건부) 질의 확장 도입 시 ADR-0002 작성

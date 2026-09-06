@@ -2,7 +2,7 @@
 wiki/resolve.py — 엔티티 정규화(canonicalization).
 
 수백만 문서에서 가장 어려운 문제가 이것이다: 같은 대상이
-"GATEWAY-A" / "GATEWAY-A" / "gateway-a" / "PRODUCT-A APIM" 으로 흩어지면
+"API Gateway" / "API-Gateway" / "api gateway" / "API 게이트웨이" 으로 흩어지면
 위키 페이지도 흩어지고 ②단계 그래프의 노드도 쪼개진다.
 
 3단 전략 (앞 단계가 싸고 뒤로 갈수록 비싸다):

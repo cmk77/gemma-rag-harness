@@ -27,7 +27,7 @@
 - LLM: OpenAI 호환 (`VLLM_URL`/`LLM_MODEL` 두 변수 — vLLM E4B+MTP ↔ 집 노트북 Ollama 무변경 전환)
 - ES: nori 분석기, 본문 필드명 **`text`** 고정(과거 content 오진단 교훈), BM25+kNN 수동 RRF
 - 임베딩: bge-m3(1024d). sentence-transformers 미설치 시 BM25-only 자동 강등
-- VERIFY: ADR-0001 교훈 이식 — [질문]을 검증 프롬프트에 명시 전달 + 주제 정합성 검사('받은 인증' vs '지원 인증'류 중의성 차단), 실패 시 k 상향 재검색
+- VERIFY: ADR-0004 교훈 이식 — [질문]을 검증 프롬프트에 명시 전달 + 주제 정합성 검사('받은 인증' vs '지원 인증'류 중의성 차단), 실패 시 k 상향 재검색
 
 ## 3. 설치
 
@@ -50,7 +50,7 @@ ES_URL=http://localhost:9200
 ## 4. 퀵스타트 (강연 실습 흐름)
 
 ```bash
-python -m wiki_vault.cli onboard --name "Mozi" --org "ExampleCorp" \
+python -m wiki_vault.cli onboard --name "사용자명" --org "조직명" \
     --interests "RAG, LangGraph, Elasticsearch"
 # → vault_wiki/ 에 0_inbox / 10_concepts / 20_entities / 30_notes /
 #   90_raw / _system(corecontext.md, rules/) 생성. 옵시디언으로 열기 가능.

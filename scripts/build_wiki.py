@@ -26,7 +26,7 @@ scripts/build_wiki.py — 원문 코퍼스를 "엔티티 중심 위키 페이지
 
 효과 검증(A/B):
   ES_INDEX=gemma_rag_wiki python -m scripts.index_corpus --dir corpus_wiki
-  ES_INDEX=gemma_rag_wiki python -m eval.run_regression --goldenset eval/goldenset.jsonl
+  ES_INDEX=gemma_rag_wiki python -m eval.run_regression --goldenset eval/goldenset_sample.jsonl
   → 기존 인덱스(gemma_rag) 점수와 비교.
 """
 
@@ -56,18 +56,18 @@ EXTRACT_PROMPT = f"""너는 지식 추출기다. 주어진 문서 조각에서 '
 
 규칙:
 - 문서에 없는 내용을 지어내지 마라.
-- '취득 인증·수상'은 GS인증·수상 등 개체가 받은 자격, '지원 인증·규격'은 개체가
+- '취득 인증·수상'은 품질인증·수상 등 개체가 받은 자격, '지원 인증·규격'은 개체가
   기능으로 제공하는 인증 방식(OAuth2, JWT 등)·표준 규격이다. 절대 혼동하지 마라.
-- 개체명은 문서 표기 그대로(예: GATEWAY-A, ExampleCorp SEARCH-B).
+- 개체명은 문서 표기 그대로(예: API 게이트웨이, 검색 엔진).
 - 표·연혁이 OCR로 깨져 뒤섞인 조각이라도, '개체 + 인증/수상 + 등급/연도'가
-  식별되면 반드시 사실로 추출하라. 예: "ExampleCorp GATEWAY-A GS인증 1등급 취득"
-  → entity "GATEWAY-A", section "취득 인증·수상", fact "GS인증 1등급을 취득했다".
-- 인증·수상 사실의 entity는 인증 이름(예: "GS 인증")이 아니라 **그것을 받은
+  식별되면 반드시 사실로 추출하라. 예: "API 게이트웨이 품질인증 1등급 취득"
+  → entity "API 게이트웨이", section "취득 인증·수상", fact "품질인증 1등급을 취득했다".
+- 인증·수상 사실의 entity는 인증 이름(예: "품질 인증")이 아니라 **그것을 받은
   제품/회사명**이다. 조각 안에 제품명이 안 보이면 [문서명]에서 추정하라.
 - 연도·날짜(예: "2022년도")를 개체로 삼지 마라 — 사실 문장 안에 포함시켜라.
 - 사실이 없으면 빈 배열 []을 출력하라."""
 
-SYNTH_PROMPT = """너는 사내 지식위키 편집자다. 아래 [사실 목록]만 사용해 개체의 위키 페이지를
+SYNTH_PROMPT = """너는 지식위키 편집자다. 아래 [사실 목록]만 사용해 개체의 위키 페이지를
 마크다운으로 작성하라. 사실에 없는 내용은 절대 추가하지 마라.
 
 형식(해당 사실이 있는 섹션만 포함, 순서 유지):
@@ -195,8 +195,8 @@ def stage_extract(src: Path, state: Path, workers: int, limit: int | None,
 
 # ── B단계: 엔티티 통합 (reduce — 정규화·중복제거·상한) ─────────────
 def _squash(s: str) -> str:
-    """구두점·공백을 제거한 비교키. 'PRODUCT-A - APIM' / 'GATEWAY-A' /
-    'API 관리 서버(API Management System: APIM)' 같은 표기 변형을 흡수한다."""
+    """구두점·공백을 제거한 비교키. 'API - Gateway' / 'API-Gateway' /
+    'API 게이트웨이(API Gateway: APIGW)' 같은 표기 변형을 흡수한다."""
     return re.sub(r"[\s\-:·().,\[\]/]+", "", s).lower()
 
 
@@ -303,11 +303,9 @@ def main() -> None:
     ap.add_argument("--rebuild", action="store_true", help="체크포인트 무시 전체 재빌드")
     args = ap.parse_args()
 
-    aliases = {"gateway-a": "GATEWAY-A", "examplecorp gateway-a": "GATEWAY-A",
-               "gateway-a": "GATEWAY-A",
-               "PRODUCT-A": "PRODUCT-A", "ExampleCorp": "ExampleCorp",
-               "examplecorp search-b": "ExampleCorp SEARCH-B", "examplecorp search-b": "ExampleCorp SEARCH-B",
-               "e-search": "ExampleCorp SEARCH-B"}
+    # 별칭 사전은 코퍼스마다 다르므로 하드코딩하지 않는다.
+    # 표기 흔들림이 있으면 --aliases 로 JSON을 넘긴다 (예시: aliases_example.json).
+    aliases: dict[str, str] = {}
     if args.aliases:
         aliases.update(json.loads(Path(args.aliases).read_text(encoding="utf-8")))
 
@@ -319,7 +317,7 @@ def main() -> None:
 
     print("\n완료. 다음으로 별도 인덱스에 색인해 A/B 비교:")
     print(f"  ES_INDEX=gemma_rag_wiki python -m scripts.index_corpus --dir {out}")
-    print("  ES_INDEX=gemma_rag_wiki python -m eval.run_regression --goldenset eval/goldenset.jsonl")
+    print("  ES_INDEX=gemma_rag_wiki python -m eval.run_regression --goldenset eval/goldenset_sample.jsonl")
 
 
 if __name__ == "__main__":

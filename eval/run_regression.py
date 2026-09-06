@@ -99,7 +99,7 @@ def detect_regression(current: dict, baseline: dict) -> list[str]:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--goldenset", default="eval/goldenset.jsonl")
+    ap.add_argument("--goldenset", default="eval/goldenset_sample.jsonl")
     ap.add_argument("--baseline", default=None, help="비교할 이전 리포트 JSON")
     ap.add_argument("--out", default="eval/reports/latest.json")
     ap.add_argument("--dry-run", action="store_true")

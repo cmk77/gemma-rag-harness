@@ -23,7 +23,7 @@ from dataclasses import asdict, dataclass
 # 새 도메인에 쓰려면 이 목록과 prompts/wiki_extract.md 의 분류 규칙만 바꾼다.
 SECTIONS: tuple[str, ...] = (
     "개요",            # 무엇인지 한 줄 정의, 소속·목적
-    "취득 인증·수상",   # GS인증, 표창, 어워드 등 '받은' 자격 (certification)
+    "취득 인증·수상",   # 품질인증, 표창, 어워드 등 '받은' 자격 (certification)
     "기능·지원 방식",   # 제공 기능, 지원 프로토콜/포맷, 인증 '방식'(OAuth2 등)
     "도입·실적",        # 도입 기관 수, 처리 건수, 레퍼런스
     "연혁",            # 시점이 있는 사건 (출시, 이전, 취득 시점)
@@ -67,7 +67,7 @@ def doc_hash(text: str) -> str:
 
 def normalize_name(name: str) -> str:
     """
-    엔티티 표기 정규화 키. 'GATEWAY-A' / 'gateway-a' / 'GATEWAY-A.' 이
+    엔티티 표기 정규화 키. 'API-GW' / 'api gw' / 'ＡＰＩ GW.' 이
     같은 키로 접히도록: 유니코드 NFKC → 대문자 → 영숫자/한글만 남김.
     (수백만 규모에선 이 규칙 기반 1차 통합 뒤, 임베딩 군집으로 2차 통합 —
      wiki/resolve.py 참고)

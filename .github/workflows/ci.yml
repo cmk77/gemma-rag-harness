@@ -54,6 +54,8 @@ jobs:
         #     --goldenset eval/goldenset_sample.jsonl \
         #     --baseline eval/reports/baseline.json
         # → 핵심 지표가 베이스라인 대비 하락하면 exit 1 로 PR 차단
+        # baseline.json 은 저장소에 없다(공개 대상 아님). 러너에서 한 번 평가해
+        # `cp eval/reports/latest.json eval/reports/baseline.json` 으로 만들어 둔다.
 
       - name: Upload report
         if: always()

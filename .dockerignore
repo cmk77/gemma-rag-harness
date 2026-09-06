@@ -18,8 +18,13 @@ corpus/*
 raw/
 corpus_wiki/
 state/
-wiki_vault/
+# wiki_vault.cli onboard 가 만드는 런타임 볼트(개인 노트)
+vault_wiki/
 sideprojectlog_*.txt
+
+# 주의: wiki_vault/ 는 제외하지 말 것 — pyproject의 packages에 등재된 소스 패키지라
+#       빌드 컨텍스트에서 빠지면 `pip install -e .` 가
+#       "package directory 'wiki_vault' does not exist" 로 실패한다.
 
 # ── 이미지에 불필요한 것 ──
 .git

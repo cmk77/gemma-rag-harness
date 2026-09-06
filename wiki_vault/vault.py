@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import re
 import shutil
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator
 
 from .models import CardType, WikiCard
 

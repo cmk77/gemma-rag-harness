@@ -14,7 +14,8 @@ import는 함수 내부로 지연시킨다.
 
 from __future__ import annotations
 
-from typing import Any, Callable, TypedDict
+from collections.abc import Callable
+from typing import Any, TypedDict
 
 from .query import QueryEngine
 

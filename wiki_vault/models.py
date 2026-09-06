@@ -11,7 +11,7 @@ from __future__ import annotations
 import datetime as _dt
 import re
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
@@ -23,7 +23,7 @@ except ImportError as e:  # pragma: no cover
 _FM_RE = re.compile(r"\A---\s*\n(.*?)\n---\s*\n?", re.S)
 
 
-class CardType(str, Enum):
+class CardType(StrEnum):
     CONCEPT = "concept"   # 개념 카드
     ENTITY = "entity"     # 엔티티 카드 (인물/제품/조직 등)
     RAW = "raw"           # 인제스트 전 로우 머터리얼
@@ -61,7 +61,7 @@ class Frontmatter:
         return d
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> "Frontmatter":
+    def from_dict(cls, d: dict[str, Any]) -> Frontmatter:
         fm = cls()
         extra: dict[str, Any] = {}
         for k, v in (d or {}).items():
@@ -91,7 +91,7 @@ class WikiCard:
         return f"---\n{fm_yaml}\n---\n\n{self.body.strip()}\n"
 
     @classmethod
-    def from_markdown(cls, text: str, path: Path | None = None) -> "WikiCard":
+    def from_markdown(cls, text: str, path: Path | None = None) -> WikiCard:
         m = _FM_RE.match(text)
         if m:
             try:

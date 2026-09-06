@@ -86,7 +86,7 @@ def main() -> int:
     # 여기서는 하네스의 GENERATE와 같은 모델 백엔드를 직접 부르는 것을 가정.
     from eval.judge import call_judge_model as judge_fn  # type: ignore
 
-    pairs = [json.loads(l) for l in open(args.pairs, encoding="utf-8")]
+    pairs = [json.loads(line) for line in open(args.pairs, encoding="utf-8")]
     results = []
     summary = defaultdict(lambda: {"pass": 0, "fail": 0})
     stability = []  # 반복 실행 시 답변이 일관됐는지

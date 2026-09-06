@@ -19,7 +19,7 @@ class WikiApp:
     vault: VaultManager
     llm: LLMClient
     embedder: Embedder | None
-    indexer: "object | None"
+    indexer: object | None
     ingest: IngestPipeline
     query: QueryEngine
     lint: LintEngine

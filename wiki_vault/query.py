@@ -204,7 +204,7 @@ class QueryEngine:
         )
         body = (f"## 질문\n{result.question}\n\n## 답변\n{result.answer}\n\n"
                 f"## 출처\n" + "\n".join(f"- {s}" for s in result.sources) +
-                f"\n\n## 트레이스\n" +
+                "\n\n## 트레이스\n" +
                 "\n".join(f"- {s}" for s in result.trace.steps))
         card = WikiCard(frontmatter=fm, body=body)
         path = self.vault.save_card(card)

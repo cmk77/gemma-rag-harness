@@ -6,8 +6,6 @@ sentence-transformers가 없거나 로드 실패 시 None을 반환해
 
 from __future__ import annotations
 
-from typing import Optional
-
 
 class Embedder:
     def __init__(self, model_name: str = "BAAI/bge-m3"):
@@ -29,13 +27,13 @@ class Embedder:
         self._load()
         return self._model is not None
 
-    def encode(self, texts: list[str]) -> Optional[list[list[float]]]:
+    def encode(self, texts: list[str]) -> list[list[float]] | None:
         self._load()
         if self._model is None:
             return None
         vecs = self._model.encode(texts, normalize_embeddings=True)
         return [v.tolist() for v in vecs]
 
-    def encode_one(self, text: str) -> Optional[list[float]]:
+    def encode_one(self, text: str) -> list[float] | None:
         out = self.encode([text])
         return out[0] if out else None

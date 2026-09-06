@@ -30,6 +30,8 @@ corpus/*
 raw/
 corpus_wiki/
 state/
+# wiki_vault.cli onboard 가 만드는 런타임 볼트(개인 노트) — 소스 패키지 wiki_vault/ 와 다름
+vault_wiki/
 
 # ── 5. 실행 산출물·로그 ──────────────────────────────────────
 # 평가 리포트: 최신 실행분은 제외, baseline.json은 커밋(회귀 비교 기준)
